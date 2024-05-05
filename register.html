@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <link href='https://fonts.googleapis.com/css?family=Share Tech Mono' rel='stylesheet'>
+    <title>Registration</title>
+    <style>
+        body {
+            background-color: black;
+            color: white;
+            text-align: center;
+            font-family: 'Share Tech Mono';
+        }
+
+        .container {
+            margin-top: 70px;
+        }
+
+        .symbol{
+            font-size: 50px;
+        }
+
+        video {
+            width: 300px;
+            height: auto;
+            margin-bottom: 20px;
+        }
+
+        button {
+            padding: 10px 20px;
+            font-size: 18px;
+            border-radius: 10px;
+            cursor: pointer;
+        }
+
+        .overlay {
+            position: absolute;
+            border: 2px solid green;
+            pointer-events: none;
+        }
+
+        .button-container {
+            margin-top: 20px;
+        }
+
+        input[type="text"] {
+            padding: 10px;
+            font-size: 18px;
+            width: 300px;
+        }
+    </style>
+    <script>
+        var websiteUrl = "";
+
+        function registerFace() {
+            navigator.mediaDevices.getUserMedia({ video: true })
+                .then(function (stream) {
+                    var videoElement = document.getElementById('videoElement');
+                    videoElement.srcObject = stream;
+                    videoElement.play();
+
+                    const detectionOptions = new faceLandmarksDetection.SsdMobilenetv1Options();
+                    faceLandmarksDetection.load(detectionOptions).then(model => {
+                        setInterval(async () => {
+                            const predictions = await model.estimateFaces(videoElement);
+
+                            const overlay = document.getElementById('overlay');
+                            overlay.innerHTML = "";
+
+                            if (predictions.length > 0) {
+                                const face = predictions[0].boundingBox;
+                                const { topLeft, bottomRight } = face;
+
+                                const x = topLeft[0];
+                                const y = topLeft[1];
+                                const width = bottomRight[0] - topLeft[0];
+                                const height = bottomRight[1] - topLeft[1];
+
+                                const box = document.createElement('div');
+                                box.style.left = x + 'px';
+                                box.style.top = y + 'px';
+                                box.style.width = width + 'px';
+                                box.style.height = height + 'px';
+                                box.classList.add('overlay');
+
+                                overlay.appendChild(box);
+                            }
+                        }, 100);
+                    }).catch(err => console.error(err));
+                })
+                .catch(function (error) {
+                    console.log('Error accessing webcam:', error);
+                });
+        }
+
+        function saveWebsiteUrl() {
+            var urlInput = document.getElementById('urlInput');
+            websiteUrl = urlInput.value;
+        }
+
+        function goToAnotherPage() {
+            localStorage.setItem('websiteUrl', websiteUrl);
+            window.location.href = "complete.html";
+        }
+    </script>
+</head>
+
+<body>
+    <div class="container">
+        <h1 class="symbol">𓅓</h1>
+        <h1>Face Registration</h1>
+        <video id="videoElement"></video>
+        <h1>Enter Website URL:</h1>
+        <input style="border-radius: 10px;" id="urlInput" type="text" placeholder="https://www.example.com">
+        <br><br>
+        <br>
+        <div class="button-container">
+            <button class="button" onclick="registerFace()">Scan Face</button>
+            <button class="button" onclick="saveWebsiteUrl()">Save URL</button>
+            <button class="button" onclick="goToAnotherPage()">Register</button>
+        </div>
+    </div>
+</body>
+
+</html>
